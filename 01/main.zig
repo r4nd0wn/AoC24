@@ -33,7 +33,7 @@ pub fn main() !void {
     std.debug.print("Distance equals: {d}\n", .{distance});
 
     // second question is solvable on a sorted list
-    // iterate through list 1 and count the times the number selected is in list 2 (iterating over 2?)
+    // iterate through list 1 and count the times the number is selected in list 2 (iterating over 2?)
     var similarityScore: i32 = 0; // this could be a quite high number
     for (0..1000) |i| {
         var occurence: i32 = 0;
