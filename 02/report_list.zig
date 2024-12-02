@@ -1,9 +1,8 @@
-const std = @import("std");
-
-const ReportList = struct {
+pub const ReportList = struct {
     buff: [10]i32,
     length: u64,
     pub fn init(buffer: []const u8) !ReportList {
+        const std = @import("std");
         var parseBuf: [10]i32 = undefined;
         var pos: u64 = 0;
         var iter = std.mem.split(u8, buffer, " ");
@@ -14,6 +13,7 @@ const ReportList = struct {
         return ReportList{ .buff = parseBuf, .length = pos };
     }
     pub fn printMe(self: ReportList) void {
+        const std = @import("std");
         for (0..self.length) |i| {
             std.debug.print("{d} \n", .{i});
         }
@@ -28,7 +28,6 @@ const ReportList = struct {
                 continue :buffer_loop;
             }
             if (previos_report == self.buff[i]) {
-                safe_marker = 0;
                 return false;
             }
             const diff: i32 = self.buff[i] - previos_report;
@@ -56,29 +55,7 @@ const ReportList = struct {
                 // difference in asc desc
                 return false;
             }
-            safe_marker = 1;
-            previous_diff = diff;
-            previos_report = self.buff[i];
         }
-        if (safe_marker == 1) return true;
-        return false;
+        return true;
     }
 };
-
-pub fn main() !void {
-    const reports_raw = @embedFile("input.txt");
-
-    var line_iterator = std.mem.split(u8, reports_raw, "\n");
-    var testBuffer: [1000]ReportList = undefined;
-
-    var linemarker: u64 = 0;
-    while (line_iterator.next()) |single_line| {
-        testBuffer[linemarker] = try ReportList.init(single_line);
-        linemarker += 1;
-    }
-    var anotherSafeCounter: i32 = 0;
-    for (testBuffer) |singleReportList| {
-        if (singleReportList.is_safe()) anotherSafeCounter += 1;
-    }
-    std.debug.print("{d}\n", .{anotherSafeCounter});
-}
