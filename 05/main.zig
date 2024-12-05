@@ -1,5 +1,6 @@
 const std = @import("std");
-
+const Rule = std.meta.Tuple(&.{ u8, u8 });
+const Rule_check_result = std.meta.Tuple(&.{ bool, u64, u64 });
 const Pages = struct {
     page_buff: [40]u8,
     length: u64,
@@ -13,8 +14,43 @@ const Pages = struct {
         }
         return Pages{ .page_buff = parseBuf, .length = pos };
     }
+    fn get_index(self: Pages, search_payload: u8) u64 {
+        for (0..self.length) |i| {
+            if (self.page_buff[i] == search_payload) return i;
+        }
+        // return 1000 if it is not found.
+        return self.length + 1;
+    }
+    fn check_proper_order(self: Pages, rule: Rule) Rule_check_result {
+        const before: u64 = self.get_index(rule[0]);
+        const after: u64 = self.get_index(rule[1]);
+        // if one of the pages are not there, return true
+        if (before > self.length or after > self.length) return .{ true, before, after };
+        // its the correct order
+        if (before < after) return .{ true, before, after };
+        return .{ false, before, after };
+    }
+
+    fn apply_rule(self: Pages, rule: Rule) bool {
+        const rule_result = self.check_proper_order(rule);
+        if (rule_result[0]) return false;
+        // triangle swap
+        const triangle: u8 = self.page_buff[rule_result[1]];
+        self.page_buff[rule_result[1]] = self.page_buff[rule_result[2]];
+        self.page_buff[rule_result[2]] = triangle;
+        return true;
+    }
+
+    pub fn apply_rule_set(self: Pages, rules: []const Rule) void {
+        var marker = true;
+        while (marker) {
+            rule_iterator: for (rules) |single_rule| {
+                if (self.apply_rule(single_rule)) break :rule_iterator;
+            }
+            marker = false;
+        }
+    }
 };
-const Rule = std.meta.Tuple(&.{ u8, u8 });
 
 pub fn main() !void {
     const reports_raw = @embedFile("input.txt");
