@@ -1,11 +1,13 @@
 const std = @import("std");
 const Rule = std.meta.Tuple(&.{ u8, u8 });
 const Rule_check_result = std.meta.Tuple(&.{ bool, u64, u64 });
+
 const Pages = struct {
-    page_buff: [40]u8,
+    page_buff: []u8,
     length: u64,
+
     pub fn init(buffer: []const u8) !Pages {
-        var parseBuf: [40]u8 = undefined;
+        var parseBuf: []u8 = try std.heap.page_allocator.alloc(u8, 40);
         var pos: u64 = 0;
         var iterator = std.mem.split(u8, buffer, ",");
         while (iterator.next()) |single_value| {
@@ -14,14 +16,19 @@ const Pages = struct {
         }
         return Pages{ .page_buff = parseBuf, .length = pos };
     }
-    fn get_index(self: Pages, search_payload: u8) u64 {
+
+    pub fn deinit(self: Pages) void {
+        std.heap.page_allocator.destroy(self.page_buff);
+    }
+
+    fn get_index(self: *const Pages, search_payload: u8) u64 {
         for (0..self.length) |i| {
             if (self.page_buff[i] == search_payload) return i;
         }
         // return 1000 if it is not found.
         return self.length + 1;
     }
-    fn check_proper_order(self: Pages, rule: Rule) Rule_check_result {
+    fn check_proper_order(self: *const Pages, rule: Rule) Rule_check_result {
         const before: u64 = self.get_index(rule[0]);
         const after: u64 = self.get_index(rule[1]);
         // if one of the pages are not there, return true
@@ -31,7 +38,7 @@ const Pages = struct {
         return .{ false, before, after };
     }
 
-    fn apply_rule(self: Pages, rule: Rule) bool {
+    fn apply_rule(self: *const Pages, rule: Rule) bool {
         const rule_result = self.check_proper_order(rule);
         if (rule_result[0]) return false;
         // triangle swap
@@ -41,7 +48,7 @@ const Pages = struct {
         return true;
     }
 
-    pub fn apply_rule_set(self: Pages, rules: []const Rule) void {
+    pub fn apply_rule_set(self: *const Pages, rules: []const Rule) void {
         var marker = true;
         while (marker) {
             rule_iterator: for (rules) |single_rule| {
@@ -78,6 +85,7 @@ pub fn main() !void {
     }
     std.debug.print("\n", .{});
     for (page_set) |single_page_set| {
+        single_page_set.apply_rule_set(&rule_set);
         std.debug.print("{any}\n", .{single_page_set.page_buff});
     }
 }
