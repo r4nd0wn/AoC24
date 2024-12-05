@@ -21,6 +21,10 @@ const Pages = struct {
         std.heap.page_allocator.destroy(self.page_buff);
     }
 
+    pub fn get_middle_value(self: *const Pages) u8 {
+        return self.page_buff[@divTrunc(self.length, 2)];
+    }
+
     fn get_index(self: *const Pages, search_payload: u8) u64 {
         for (0..self.length) |i| {
             if (self.page_buff[i] == search_payload) return i;
@@ -46,6 +50,14 @@ const Pages = struct {
         self.page_buff[rule_result[1]] = self.page_buff[rule_result[2]];
         self.page_buff[rule_result[2]] = triangle;
         return true;
+    }
+
+    pub fn check_rule_set(self: *const Pages, rules: []const Rule) bool {
+        var result = true;
+        for (rules) |single_rule| {
+            if (!self.check_proper_order(single_rule)[0]) result = false;
+        }
+        return result;
     }
 
     pub fn apply_rule_set(self: *const Pages, rules: []const Rule) void {
@@ -84,8 +96,16 @@ pub fn main() !void {
         std.debug.print("{d}|{d},", .{ single_rule[0], single_rule[1] });
     }
     std.debug.print("\n", .{});
-    for (page_set) |single_page_set| {
-        single_page_set.apply_rule_set(&rule_set);
-        std.debug.print("{any}\n", .{single_page_set.page_buff});
+
+    std.debug.print("{d}\n", .{page_marker});
+    var middle_sum: u64 = 0;
+    for (0..page_marker) |i| {
+        //page_set[i].apply_rule_set(&rule_set);
+        //middle_sum += page_set[i].get_middle_value();
+        if (page_set[i].check_rule_set(&rule_set)) {
+            middle_sum += page_set[i].get_middle_value();
+        }
+        std.debug.print("{any}\n", .{page_set[i].page_buff});
     }
+    std.debug.print("{any}\n", .{middle_sum});
 }
